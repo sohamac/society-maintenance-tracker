@@ -1,136 +1,226 @@
 # Society Maintenance Tracker
 
-A platform for apartment societies to track maintenance complaints end-to-end: residents raise
-complaints with photos, admins manage them through a status/priority workflow with overdue
-detection, and everyone stays informed via a notice board and email notifications.
+> A full-stack end-to-end platform for apartment societies to raise, track, and manage maintenance complaints with photo attachments, SLA-driven overdue tracking, an audit history trail, society notices, and email notifications.
 
-## Tech Stack
+---
 
-- **Backend**: Node.js, Express, PostgreSQL (`pg`), JWT auth, Multer (photo upload), Nodemailer
-- **Frontend**: React (Vite), React Router, Axios
-- **Database**: PostgreSQL
+## 🌐 Live Hosted Application & Endpoints
 
-## Project Structure
+- **Live Application (Frontend UI)**: [https://society-maintenance-tracker-ebon.vercel.app](https://society-maintenance-tracker-ebon.vercel.app)
+- **Live Backend API**: [https://society-tracker-api-jrlq.onrender.com](https://society-tracker-api-jrlq.onrender.com)
+- **Health Check**: [https://society-tracker-api-jrlq.onrender.com/health](https://society-tracker-api-jrlq.onrender.com/health)
+- **Database**: Managed PostgreSQL on [Neon.tech](https://neon.tech/)
 
-```
+---
+
+## 📋 Deliverables Summary
+
+1. **Complete Source Code**: Fully structured, production-ready source code (no temporary files or dependencies committed).
+2. **README**: Comprehensive setup guide, `.env.example`, detailed API documentation, and PostgreSQL database schema.
+3. **Hosted Application**: Live web application deployed on **Vercel** + **Render** + **Neon**.
+4. **System Design Write-up**: Contained in [`system-design-writeup.md`](./system-design-writeup.md) (covers complaint history model, query-time overdue detection, photo handling, and async notification flow with audit retries under 800 words).
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18, Vite, React Router v6, Axios, Custom CSS (responsive & clean UI)
+- **Backend**: Node.js (ES Modules), Express.js, PostgreSQL (`pg` connection pool with SSL), JWT Authentication, Multer (multipart photo uploads), Nodemailer
+- **Database**: PostgreSQL with custom ENUMs, triggers, indexes, and an append-only audit trail
+- **Deployment**: Vercel (Frontend SPA), Render (Backend API Web Service), Neon (Cloud PostgreSQL)
+
+---
+
+## 🏗️ Project Architecture & Structure
+
+```text
 society-maintenance-tracker/
+├── README.md                     # Comprehensive project documentation & API guide
+├── system-design-writeup.md      # Architectural design write-up (< 800 words)
+├── schema.sql                    # PostgreSQL schema definition & seed data
 ├── backend/
-│   ├── schema.sql              # Database schema (run this first)
-│   ├── .env.example
+│   ├── .env.example              # Example environment configuration
+│   ├── package.json              # Backend dependencies & npm scripts
+│   ├── schema.sql                # Database schema duplicate for backend setup
 │   └── src/
-│       ├── config/db.js        # PG connection pool
-│       ├── middleware/         # auth (JWT) + upload (multer)
-│       ├── controllers/        # business logic
-│       ├── routes/             # Express routers
-│       ├── utils/mailer.js     # email sending
-│       └── app.js / server.js
+│       ├── app.js                # Express app setup & middleware routing
+│       ├── server.js             # Server entry point
+│       ├── config/
+│       │   └── db.js             # PostgreSQL connection pool (SSL-ready)
+│       ├── controllers/
+│       │   ├── authController.js       # Register & login authentication logic
+│       │   ├── complaintController.js  # Complaint CRUD, audit logs & pagination
+│       │   ├── dashboardController.js  # Aggregate metrics & notification retries
+│       │   └── noticeController.js     # Notice board & important fan-out
+│       ├── middleware/
+│       │   ├── auth.js           # JWT authentication & role verification (resident/admin)
+│       │   └── upload.js         # Multer image validation (type & size check)
+│       ├── routes/
+│       │   ├── authRoutes.js
+│       │   ├── complaintRoutes.js
+│       │   ├── dashboardRoutes.js
+│       │   └── noticeRoutes.js
+│       ├── utils/
+│       │   ├── mailer.js               # Nodemailer email formatting & transport
+│       │   └── notificationService.js  # Auditable delivery & retry mechanism
+│       └── uploads/              # Local upload directory (.gitkeep tracked)
 └── frontend/
-    ├── .env.example (not needed — uses Vite proxy to backend)
+    ├── index.html                # HTML entry point
+    ├── package.json              # Frontend dependencies & npm scripts
+    ├── vite.config.js            # Vite configuration with local proxy
+    ├── vercel.json               # SPA client routing redirects for Vercel
+    ├── .env.example              # Frontend environment configuration
     └── src/
-        ├── pages/               # route-level screens
-        ├── components/          # NavBar, ProtectedRoute
-        ├── context/AuthContext.jsx
-        └── api/client.js        # axios instance with JWT interceptor
+        ├── App.jsx               # Router & route guards
+        ├── main.jsx              # React DOM render root
+        ├── index.css             # Unified styling system
+        ├── api/
+        │   └── client.js         # Axios instance with JWT interceptor & API base
+        ├── components/
+        │   ├── NavBar.jsx        # Navigation bar with role-aware links
+        │   └── ProtectedRoute.jsx# Client-side route protection
+        ├── context/
+        │   └── AuthContext.jsx   # Global user state & JWT persistence
+        └── pages/
+            ├── AdminDashboard.jsx   # Admin overview, filters, overdue flag & retries
+            ├── ComplaintDetail.jsx  # Detailed complaint view & complete audit timeline
+            ├── Login.jsx            # User sign-in
+            ├── NewComplaint.jsx     # File complaint with photo attachment
+            ├── NoticeBoard.jsx      # Society notices with pinned priority
+            ├── Register.jsx         # Resident sign-up
+            └── ResidentDashboard.jsx# Resident complaint list with pagination
 ```
 
-## Setup Guide
+---
 
-### 1. Database
+## ⚡ Key Features & Workflow
 
-Create a PostgreSQL database and run the schema:
+### 1. Role-Based Access Control (RBAC)
+- **Residents**: Register, log in, create maintenance complaints with category and photo attachments, view own tickets, and inspect the chronological resolution history.
+- **Admins**: View all complaints, filter by status/category/date, update status and priority with notes, post notices (with important broadcasts), view high-level dashboard metrics, and trigger email retries.
 
+### 2. Event-Sourced Complaint History
+- Every change (creation, status transition, priority alteration, admin notes) is appended to `complaint_history` inside an atomic database transaction.
+- `complaints.current_status` serves as an in-sync denormalized cache for fast querying, while `complaint_history` provides an immutable audit log.
+
+### 3. Dynamic SLA Overdue Tracking
+- Overdue status is computed at query time using `categories.sla_days` and `NOW() - created_at > (sla_days || ' days')::interval`.
+- Overdue complaints automatically float to the top of the admin dashboard (`ORDER BY is_overdue DESC, created_at ASC`) without stale cached flags.
+
+### 4. Resilient Notification System
+- Status transitions and important notices record rows in `notification_log`.
+- Deliveries are attempted asynchronously without blocking API responses.
+- Failed deliveries can be retried automatically or on-demand by admins via `POST /api/dashboard/retry-notifications`.
+
+---
+
+## 📖 API Documentation
+
+All endpoints (except `/api/auth/*` and `GET /health`) require `Authorization: Bearer <token>`.
+
+### Authentication
+| Method | Endpoint | Access | Request Body | Description |
+|---|---|---|---|---|
+| `POST` | `/api/auth/register` | Public | `{ "name", "email", "password", "apartment_no" }` | Registers a resident user |
+| `POST` | `/api/auth/login` | Public | `{ "email", "password" }` | Logs in and returns user object + JWT token |
+
+### Complaints
+| Method | Endpoint | Role | Query / Body | Description |
+|---|---|---|---|---|
+| `POST` | `/api/complaints` | Resident | `multipart/form-data`: `category_id`, `description`, `priority`, `photo` (file) | Creates a complaint and initial history event |
+| `GET` | `/api/complaints/mine` | Resident | `?page=1&limit=10` | Returns paginated list of resident's own complaints |
+| `GET` | `/api/complaints/:id/history` | Resident (owner) / Admin | `id` parameter | Returns complaint details and chronological history timeline |
+| `GET` | `/api/complaints` | Admin | `?status=&category_id=&date_from=&date_to=&page=1&limit=20` | Returns filtered, paginated complaints sorted overdue-first |
+| `PATCH` | `/api/complaints/:id` | Admin | `{ "status", "priority", "note" }` | Updates complaint, records history, and triggers async email |
+
+### Notices
+| Method | Endpoint | Role | Query / Body | Description |
+|---|---|---|---|---|
+| `GET` | `/api/notices` | Authenticated | `?page=1&limit=10` | Returns notices with important notices pinned first |
+| `POST` | `/api/notices` | Admin | `{ "title", "content", "is_important" }` | Creates a notice; fans out emails if marked important |
+
+### Dashboard & Maintenance
+| Method | Endpoint | Role | Description |
+|---|---|---|---|
+| `GET` | `/api/dashboard` | Admin | Returns counts by status, by category, and total overdue count |
+| `POST` | `/api/dashboard/retry-notifications` | Admin | Retries failed emails in `notification_log` (< 3 attempts) |
+| `GET` | `/health` | Public | Health check endpoint (returns `{"status":"ok"}`) |
+
+---
+
+## 🗄️ Database Schema & Structure
+
+```sql
+-- Enums
+CREATE TYPE user_role AS ENUM ('resident', 'admin');
+CREATE TYPE complaint_status AS ENUM ('Open', 'In Progress', 'Resolved');
+CREATE TYPE complaint_priority AS ENUM ('Low', 'Medium', 'High');
+CREATE TYPE history_field AS ENUM ('status', 'priority', 'note_added', 'created');
+CREATE TYPE notification_type AS ENUM ('status_change', 'important_notice');
+CREATE TYPE notification_status AS ENUM ('pending', 'sent', 'failed');
+
+-- Core Tables
+- users (id, name, email, password_hash, role, apartment_no, is_active, created_at)
+- categories (id, name, sla_days)
+- complaints (id, resident_id, category_id, description, photo_url, photo_key, current_status, priority, created_at, updated_at, resolved_at)
+- complaint_history (id, complaint_id, actor_id, actor_role, field_changed, old_value, new_value, note, created_at)
+- notices (id, admin_id, title, content, is_important, created_at)
+- notification_log (id, user_id, type, related_id, status, attempts, last_error, created_at, sent_at)
+```
+
+---
+
+## 💻 Local Setup Guide
+
+### 1. Prerequisites
+- Node.js (v18+)
+- PostgreSQL installed and running locally
+
+### 2. Database Initialization
 ```bash
 createdb maintenance_tracker
 psql maintenance_tracker -f backend/schema.sql
 ```
 
-### 2. Backend
-
+### 3. Backend Setup
 ```bash
 cd backend
-cp .env.example .env       # fill in DATABASE_URL, JWT_SECRET, SMTP credentials
+cp .env.example .env
 npm install
-npm run dev                # starts on http://localhost:5000
+npm run dev
 ```
+*Backend will start on `http://localhost:5000` (or `http://localhost:5001`).*
 
-For email, any free-tier SMTP works for local testing — a Gmail account with an
-[App Password](https://support.google.com/accounts/answer/185833), or a service like Mailtrap.
-
-### 3. Frontend
-
+### 4. Frontend Setup
 ```bash
 cd frontend
+cp .env.example .env
 npm install
-npm run dev                 # starts on http://localhost:5173, proxies /api to :5000
+npm run dev
 ```
+*Frontend will start on `http://localhost:5173`.*
 
-### 4. First admin account
-
-Open registration only creates residents. Promote a user to admin directly in the database:
-
+### 5. Creating Your First Admin
+Register a resident account via the UI, then promote the account in PostgreSQL:
 ```sql
-UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
+UPDATE users SET role = 'admin' WHERE email = 'your_email@example.com';
 ```
 
-## API Documentation
+---
 
-All endpoints except `/auth/*` and `GET /health` require `Authorization: Bearer <token>`.
+## 🚀 Cloud Deployment Guide
 
-### Auth
-| Method | Endpoint | Body | Notes |
-|---|---|---|---|
-| POST | `/api/auth/register` | `{ name, email, password, apartment_no }` | Creates a resident |
-| POST | `/api/auth/login` | `{ email, password }` | Returns `{ user, token }` |
+1. **Database (Neon.tech)**:
+   - Create a free PostgreSQL project on Neon.
+   - Run `backend/schema.sql` inside Neon SQL Editor.
+   - Copy the Connection String with `sslmode=require`.
 
-### Complaints
-| Method | Endpoint | Role | Notes |
-|---|---|---|---|
-| POST | `/api/complaints` | resident | multipart/form-data: `category_id, description, priority, photo` |
-| GET | `/api/complaints/mine` | resident | Own complaints |
-| GET | `/api/complaints/:id/history` | resident (own) / admin | Full status/priority history |
-| GET | `/api/complaints` | admin | Query params: `status, category_id, date_from, date_to`. Returns `is_overdue` computed per row, sorted overdue-first |
-| PATCH | `/api/complaints/:id` | admin | `{ status, priority, note }` — logs to history, emails resident on status change |
+2. **Backend (Render.com)**:
+   - Create a **Web Service** pointing to `backend/`.
+   - Set Build Command: `npm install`, Start Command: `npm start`.
+   - Add Environment Variables (`DATABASE_URL`, `JWT_SECRET`, `SMTP_*`, `NODE_ENV=production`).
 
-### Notices
-| Method | Endpoint | Role | Notes |
-|---|---|---|---|
-| GET | `/api/notices` | any authenticated user | Important notices pinned to top |
-| POST | `/api/notices` | admin | `{ title, content, is_important }` — emails all residents if important |
-
-### Dashboard
-| Method | Endpoint | Role | Notes |
-|---|---|---|---|
-| GET | `/api/dashboard` | admin | `{ byStatus, byCategory, overdueCount }` |
-
-## Database Schema
-
-See `backend/schema.sql` for the full schema and `system-design-writeup.md` for the reasoning
-behind the complaint history model, overdue detection, photo handling, and notification flow.
-
-Key design points:
-- **`complaint_history`** is an append-only audit trail (source of truth); `complaints.current_status`
-  is a denormalized cache kept in sync in the same DB transaction.
-- **Overdue** is computed at query time from `categories.sla_days`, not stored, so it's always accurate.
-- **Photos** are stored on local disk in this scaffold (`backend/src/uploads`, served at `/uploads/*`)
-  for simplicity; swap `middleware/upload.js` for a signed-URL flow to S3/Cloudinary for production,
-  per the system design write-up.
-- **Emails** are sent asynchronously via Nodemailer and never block the API response.
-
-## What's Implemented vs. What's Left
-
-Implemented: auth (register/login/JWT), complaint creation with photo upload, full history
-logging, admin filtering + overdue sorting, status/priority updates with email notification,
-notice board with important-notice fan-out email, admin dashboard stats.
-
-Left as follow-up work: pagination on complaint/notice lists, refresh tokens, a proper email
-queue/retry using `notification_log` (table is in the schema but not yet wired up), and
-deployment configuration (Dockerfile / hosting-specific env setup for Vercel/Render/Railway).
-
-## Deployment Notes
-
-- Backend: any Node host (Render, Railway) — set the `.env` vars, point `DATABASE_URL` at a
-  managed Postgres instance, and ensure the `uploads/` directory persists or is swapped for
-  object storage before going to production (local disk storage doesn't survive redeploys on
-  most PaaS platforms).
-- Frontend: Vercel/Netlify — set the API base URL via a build-time env var instead of relying on
-  the Vite dev proxy once backend and frontend are on different domains.
+3. **Frontend (Vercel.com)**:
+   - Import Git repository pointing to `frontend/`.
+   - Add Environment Variable `VITE_API_URL` set to your Render backend URL.
+   - Deploy.

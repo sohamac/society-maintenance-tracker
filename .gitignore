@@ -1,7 +1,34 @@
+# Dependencies
 node_modules/
+package-lock.json.bak
+
+# Environment & Sensitive Files
 .env
+.env.local
+.env.*.local
+
+# Build Artifacts
 dist/
 build/
+out/
+.next/
+
+# OS & Editor Files
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads (preserve .gitkeep)
+backend/src/uploads/*
+!backend/src/uploads/.gitkeep
 src/uploads/*
 !src/uploads/.gitkeep
