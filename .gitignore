@@ -32,3 +32,4 @@ backend/src/uploads/*
 !backend/src/uploads/.gitkeep
 src/uploads/*
 !src/uploads/.gitkeep
+*.zip
