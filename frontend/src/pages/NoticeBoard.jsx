@@ -27,38 +27,52 @@ export default function NoticeBoard() {
   }
 
   return (
-    <div className="page">
-      <h1>Notice Board</h1>
+    <div className="page" style={{maxWidth: '800px'}}>
+      <div className="page-header">
+        <h1>Notice Board</h1>
+      </div>
 
       {user?.role === "admin" && (
         <form onSubmit={handlePost} className="notice-form">
-          <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <textarea placeholder="Content" value={content} onChange={(e) => setContent(e.target.value)} required />
-          <label>
-            <input type="checkbox" checked={isImportant} onChange={(e) => setIsImportant(e.target.checked)} />
-            Mark as important
-          </label>
-          <button type="submit">Post Notice</button>
+          <h3 style={{marginTop: 0, marginBottom: '1rem'}}>Post Announcement</h3>
+          <input placeholder="Notice Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <textarea placeholder="Write the announcement..." rows={4} value={content} onChange={(e) => setContent(e.target.value)} required />
+          
+          <div className="flex-between mt-4">
+            <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer'}}>
+              <input 
+                type="checkbox" 
+                checked={isImportant} 
+                onChange={(e) => setIsImportant(e.target.checked)} 
+                style={{width: 'auto', margin: 0}}
+              />
+              <span style={{color: 'var(--color-in-progress)'}}>Mark as Important (Sends Email Broadcast)</span>
+            </label>
+            <button type="submit" className="action-btn">Post Notice</button>
+          </div>
         </form>
       )}
 
-      <ul className="notice-list">
+      <div className="notice-list">
         {notices.map((n) => (
-          <li key={n.id} className={n.is_important ? "pinned" : ""}>
-            {n.is_important && <span className="pin">[Important] </span>}
-            <strong>{n.title}</strong>
-            <p>{n.content}</p>
-            <small>{new Date(n.created_at).toLocaleString()}</small>
-          </li>
+          <div key={n.id} className={`notice-card ${n.is_important ? "pinned" : ""}`}>
+            <div className="notice-title">
+              {n.is_important && <span className="pin-badge">Important</span>}
+              {n.title}
+            </div>
+            <p className="notice-content">{n.content}</p>
+            <small className="notice-date">{new Date(n.created_at).toLocaleString()}</small>
+          </div>
         ))}
-      </ul>
+        {notices.length === 0 && <p style={{color: 'var(--text-secondary)'}}>No notices posted yet.</p>}
+      </div>
 
       {pagination.totalPages > 1 && (
         <div className="pagination">
           <button disabled={pagination.page <= 1} onClick={() => load(pagination.page - 1)}>
             Previous
           </button>
-          <span>Page {pagination.page} of {pagination.totalPages}</span>
+          <span style={{fontFamily: 'JetBrains Mono', color: 'var(--text-secondary)'}}>Page {pagination.page} / {pagination.totalPages}</span>
           <button disabled={pagination.page >= pagination.totalPages} onClick={() => load(pagination.page + 1)}>
             Next
           </button>

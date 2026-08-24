@@ -25,16 +25,19 @@ export default function Register() {
 
   return (
     <div className="auth-page">
-      <h1>Resident Registration</h1>
+      <div style={{textAlign: 'center', marginBottom: '2rem'}}>
+        <h1 style={{marginBottom: '0.5rem'}}>Join Society Tracker</h1>
+        <p style={{color: 'var(--text-secondary)', marginTop: 0}}>Create your resident account</p>
+      </div>
       <form onSubmit={handleSubmit}>
-        <input placeholder="Full name" value={form.name} onChange={update("name")} required />
-        <input type="email" placeholder="Email" value={form.email} onChange={update("email")} required />
-        <input type="password" placeholder="Password" value={form.password} onChange={update("password")} required />
-        <input placeholder="Apartment no. (e.g. B-402)" value={form.apartment_no} onChange={update("apartment_no")} />
+        <input placeholder="Full Name" value={form.name} onChange={update("name")} required />
+        <input type="email" placeholder="Email Address" value={form.email} onChange={update("email")} required />
+        <input type="password" placeholder="Create Password" value={form.password} onChange={update("password")} required />
+        <input placeholder="Apartment No. (e.g. B-402)" value={form.apartment_no} onChange={update("apartment_no")} />
         {error && <p className="error">{error}</p>}
-        <button type="submit">Register</button>
+        <button type="submit" style={{width: '100%', fontSize: '1.05rem', padding: '0.85rem'}}>Register</button>
       </form>
-      <p>Already have an account? <Link to="/login">Log in</Link></p>
+      <p>Already have an account? <Link to="/login">Log in here</Link></p>
     </div>
   );
 }

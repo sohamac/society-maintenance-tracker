@@ -13,6 +13,7 @@ const CATEGORIES = [
 export default function NewComplaint() {
   const [categoryId, setCategoryId] = useState(1);
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Low");
   const [photo, setPhoto] = useState(null);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function NewComplaint() {
     const formData = new FormData();
     formData.append("category_id", categoryId);
     formData.append("description", description);
+    formData.append("priority", priority);
     if (photo) formData.append("photo", photo);
 
     try {
@@ -36,25 +38,69 @@ export default function NewComplaint() {
   }
 
   return (
-    <div className="page">
-      <h1>Raise a Complaint</h1>
-      <form onSubmit={handleSubmit}>
-        <label>Category</label>
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          {CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+    <div className="page" style={{maxWidth: '600px'}}>
+      <div className="complaint-detail-header">
+        <h1 style={{marginBottom: '1.5rem'}}>Raise a Complaint</h1>
+        <form onSubmit={handleSubmit}>
+          <label>Category</label>
+          <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem'}}>
+            {CATEGORIES.map((c) => (
+              <div 
+                key={c.id} 
+                onClick={() => setCategoryId(c.id)}
+                style={{
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '999px',
+                  border: `1px solid ${categoryId === c.id ? 'var(--accent-primary)' : 'var(--border)'}`,
+                  background: categoryId === c.id ? 'var(--accent-primary)' : 'var(--bg-primary)',
+                  color: categoryId === c.id ? 'white' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {c.name}
+              </div>
+            ))}
+          </div>
 
-        <label>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} required />
+          <label>Priority</label>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
 
-        <label>Photo (optional)</label>
-        <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files[0])} />
+          <label>Description</label>
+          <textarea 
+            value={description} 
+            onChange={(e) => setDescription(e.target.value)} 
+            required 
+            rows={5}
+            placeholder="Describe the issue in detail..."
+          />
 
-        {error && <p className="error">{error}</p>}
-        <button type="submit">Submit</button>
-      </form>
+          <label>Photo Attachment (optional)</label>
+          <div style={{
+            border: '1px dashed var(--border)', 
+            padding: '2rem', 
+            borderRadius: 'var(--radius-md)', 
+            textAlign: 'center',
+            marginBottom: '1.5rem',
+            background: 'var(--bg-primary)'
+          }}>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => setPhoto(e.target.files[0])}
+              style={{ margin: 0, padding: 0, border: 'none', background: 'transparent' }} 
+            />
+          </div>
+
+          {error && <p className="error">{error}</p>}
+          <button type="submit" style={{width: '100%', fontSize: '1.1rem', padding: '1rem'}}>Submit Complaint</button>
+        </form>
+      </div>
     </div>
   );
 }
