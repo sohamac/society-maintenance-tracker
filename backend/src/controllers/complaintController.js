@@ -2,8 +2,7 @@ import { pool } from "../config/db.js";
 import { statusChangeEmail } from "../utils/mailer.js";
 import { notify } from "../utils/notificationService.js";
 
-// Resident: create a new complaint. Photo (if any) is already on disk via multer;
-// req.file.path is used to build a servable URL.
+// Resident: create a new complaint
 export async function createComplaint(req, res) {
   const { category_id, description, priority } = req.body;
   if (!category_id || !description) {
@@ -40,7 +39,7 @@ export async function createComplaint(req, res) {
   }
 }
 
-// Resident: list own complaints (paginated)
+// Resident: list own complaints
 export async function getMyComplaints(req, res) {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
@@ -70,7 +69,7 @@ export async function getMyComplaints(req, res) {
   }
 }
 
-// Resident or Admin: full history of one complaint (with access check)
+// Get full history of a complaint
 export async function getComplaintHistory(req, res) {
   const { id } = req.params;
   try {
@@ -95,7 +94,7 @@ export async function getComplaintHistory(req, res) {
   }
 }
 
-// Admin: list all complaints, with filters + computed overdue flag (paginated)
+// Admin: list all complaints with filters and computed overdue flag
 export async function getAllComplaints(req, res) {
   const { status, category_id, date_from, date_to } = req.query;
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -114,8 +113,6 @@ export async function getAllComplaints(req, res) {
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
   try {
-    // Pagination is applied AFTER the overdue-first sort, so page 1 always
-    // surfaces the most urgent complaints regardless of page size.
     const rowsResult = await pool.query(
       `SELECT c.*, cat.name AS category_name, cat.sla_days, u.name AS resident_name,
               (c.current_status <> 'Resolved'
@@ -145,7 +142,7 @@ export async function getAllComplaints(req, res) {
   }
 }
 
-// Admin: update status and/or priority; always logs to history; emails resident on status change
+// Admin: update status and priority
 export async function updateComplaint(req, res) {
   const { id } = req.params;
   const { status, priority, note } = req.body;
@@ -189,15 +186,12 @@ export async function updateComplaint(req, res) {
 
     await client.query("COMMIT");
 
-    // Notify resident on status change (async, never blocks the response)
+    // Async notification
     if (status && status !== before.current_status) {
       const residentResult = await pool.query("SELECT email FROM users WHERE id = $1", [before.resident_id]);
       const email = residentResult.rows[0]?.email;
       if (email) {
         const { subject, text } = statusChangeEmail(after, before.current_status, status, note);
-        // Logged to notification_log (status/attempts tracked) and retryable if it fails.
-        // Not awaited on the response path — fire-and-forget so a slow SMTP call never
-        // delays the API response.
         notify({ userId: before.resident_id, type: "status_change", relatedId: id, to: email, subject, text });
       }
     }

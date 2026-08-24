@@ -45,7 +45,7 @@ export default function NoticeBoard() {
       <ul className="notice-list">
         {notices.map((n) => (
           <li key={n.id} className={n.is_important ? "pinned" : ""}>
-            {n.is_important && <span className="pin">📌</span>}
+            {n.is_important && <span className="pin">[Important] </span>}
             <strong>{n.title}</strong>
             <p>{n.content}</p>
             <small>{new Date(n.created_at).toLocaleString()}</small>

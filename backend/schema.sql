@@ -1,5 +1,5 @@
 -- ============================================================
--- Society Maintenance Tracker — Database Schema (PostgreSQL)
+-- Society Maintenance Tracker - Database Schema (PostgreSQL)
 -- ============================================================
 
 -- ---------- ENUM TYPES ----------
@@ -34,7 +34,7 @@ CREATE TABLE categories (
 );
 
 -- ============================================================
--- COMPLAINTS  (current state — denormalized cache of latest status)
+-- COMPLAINTS  (current state - denormalized cache of latest status)
 -- ============================================================
 CREATE TABLE complaints (
     id              SERIAL PRIMARY KEY,
@@ -63,7 +63,7 @@ CREATE INDEX idx_complaints_created  ON complaints(created_at);
 -- ORDER BY is_overdue DESC, c.created_at ASC;
 
 -- ============================================================
--- COMPLAINT HISTORY  (append-only audit trail — source of truth)
+-- COMPLAINT HISTORY  (append-only audit trail - source of truth)
 -- ============================================================
 CREATE TABLE complaint_history (
     id              SERIAL PRIMARY KEY,

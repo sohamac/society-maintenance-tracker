@@ -1,6 +1,7 @@
 import { pool } from "../config/db.js";
 import { retryFailedNotifications } from "../utils/notificationService.js";
 
+// Get dashboard summary statistics
 export async function getDashboard(req, res) {
   try {
     const byStatus = await pool.query(
@@ -29,9 +30,7 @@ export async function getDashboard(req, res) {
   }
 }
 
-// Manually trigger a retry pass over failed notifications (attempts < 3).
-// In production this would also run on a schedule (e.g. hourly cron) rather
-// than relying solely on an admin clicking a button.
+// Manually trigger a retry pass over failed notifications
 export async function retryNotifications(req, res) {
   try {
     const result = await retryFailedNotifications();

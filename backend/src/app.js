@@ -19,19 +19,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded photos statically (local-dev scaffold only — see middleware/upload.js note)
+// Serve uploaded photos
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// Health check
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
+// 404 handler
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 
-// Central error handler (e.g., multer file-type/size errors land here)
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(err.status || 500).json({ error: err.message || "Internal server error" });

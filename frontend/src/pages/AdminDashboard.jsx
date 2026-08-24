@@ -75,7 +75,7 @@ export default function AdminDashboard() {
               <td>{c.category_name}</td>
               <td>{c.priority}</td>
               <td>{c.current_status}</td>
-              <td>{c.is_overdue ? "⚠️" : ""}</td>
+              <td>{c.is_overdue ? "Overdue" : "On Track"}</td>
               <td>
                 <select value={c.current_status} onChange={(e) => updateStatus(c.id, e.target.value)}>
                   <option value="Open">Open</option>

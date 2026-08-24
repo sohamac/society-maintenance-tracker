@@ -24,13 +24,13 @@ export default function ComplaintDetail() {
       <h1>Complaint #{complaint.id}</h1>
       <p>{complaint.description}</p>
       {photoSrc && <img src={photoSrc} alt="Complaint" className="complaint-photo" />}
-      <p>Status: <strong>{complaint.current_status}</strong> · Priority: {complaint.priority}</p>
+      <p>Status: <strong>{complaint.current_status}</strong> | Priority: {complaint.priority}</p>
 
       <h2>History</h2>
       <ul className="history-list">
         {history.map((h) => (
           <li key={h.id}>
-            <span>{new Date(h.created_at).toLocaleString()}</span> —{" "}
+            <span>{new Date(h.created_at).toLocaleString()}</span> -{" "}
             {h.field_changed === "created"
               ? `Complaint created by ${h.actor_name}`
               : `${h.field_changed} changed from ${h.old_value} to ${h.new_value} by ${h.actor_name}`}

@@ -23,7 +23,7 @@ export default function ResidentDashboard() {
         {complaints.map((c) => (
           <li key={c.id}>
             <Link to={`/complaints/${c.id}`}>
-              <strong>{c.category_name}</strong> — {c.description.slice(0, 60)}
+              <strong>{c.category_name}</strong> - {c.description.slice(0, 60)}
               <span className={`status status-${c.current_status.replace(" ", "-")}`}>
                 {c.current_status}
               </span>

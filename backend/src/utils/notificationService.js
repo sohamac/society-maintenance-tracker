@@ -3,10 +3,7 @@ import { sendMail } from "./mailer.js";
 
 const MAX_ATTEMPTS = 3;
 
-// Wraps sendMail with a notification_log row: creates a 'pending' row, attempts
-// delivery immediately, and updates the row to 'sent' or 'failed'. This means
-// every email attempt is auditable and failed ones can be retried later without
-// re-deriving the subject/body from the original complaint/notice.
+// Logs notification and attempts delivery
 export async function notify({ userId, type, relatedId, to, subject, text, html }) {
   const logResult = await pool.query(
     `INSERT INTO notification_log (user_id, type, related_id, status, attempts)
@@ -37,10 +34,7 @@ async function attemptDelivery(logId, { to, subject, text, html }) {
   }
 }
 
-// Re-attempts every failed notification under MAX_ATTEMPTS, re-fetching the
-// recipient's current email (in case it changed) and reconstructing the message
-// from the related complaint/notice. Intended to be called by a scheduled job
-// (e.g. hourly cron) or manually via the admin retry endpoint.
+// Retries failed notifications under MAX_ATTEMPTS
 export async function retryFailedNotifications() {
   const failed = await pool.query(
     `SELECT nl.*, u.email
@@ -54,7 +48,7 @@ export async function retryFailedNotifications() {
   let retried = 0;
   for (const row of failed.rows) {
     const message = await rebuildMessage(row);
-    if (!message) continue; // related complaint/notice was deleted; skip
+    if (!message) continue;
     await attemptDelivery(row.id, { to: row.email, ...message });
     retried++;
   }
