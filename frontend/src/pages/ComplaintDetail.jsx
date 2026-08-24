@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import client from "../api/client";
+import client, { API_BASE } from "../api/client";
 
 export default function ComplaintDetail() {
   const { id } = useParams();
@@ -13,11 +13,17 @@ export default function ComplaintDetail() {
   if (!data) return <p>Loading...</p>;
   const { complaint, history } = data;
 
+  const photoSrc = complaint.photo_url
+    ? complaint.photo_url.startsWith("http")
+      ? complaint.photo_url
+      : `${API_BASE}${complaint.photo_url}`
+    : null;
+
   return (
     <div className="page">
       <h1>Complaint #{complaint.id}</h1>
       <p>{complaint.description}</p>
-      {complaint.photo_url && <img src={complaint.photo_url} alt="Complaint" className="complaint-photo" />}
+      {photoSrc && <img src={photoSrc} alt="Complaint" className="complaint-photo" />}
       <p>Status: <strong>{complaint.current_status}</strong> · Priority: {complaint.priority}</p>
 
       <h2>History</h2>
